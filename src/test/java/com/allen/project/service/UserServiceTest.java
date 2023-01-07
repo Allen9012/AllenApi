@@ -4,6 +4,7 @@ import com.allen.project.model.entity.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 
@@ -60,14 +61,14 @@ class UserServiceTest {
             userPassword = "123456";
             result = userService.userRegister(userAccount, userPassword, checkPassword);
             Assertions.assertEquals(-1, result);
-            userAccount = "yu pi";
+            userAccount = "alle n";
             userPassword = "12345678";
             result = userService.userRegister(userAccount, userPassword, checkPassword);
             Assertions.assertEquals(-1, result);
             checkPassword = "123456789";
             result = userService.userRegister(userAccount, userPassword, checkPassword);
             Assertions.assertEquals(-1, result);
-            userAccount = "dogYupi";
+            userAccount = "dogallen";
             checkPassword = "12345678";
             result = userService.userRegister(userAccount, userPassword, checkPassword);
             Assertions.assertEquals(-1, result);
@@ -77,5 +78,11 @@ class UserServiceTest {
         } catch (Exception e) {
 
         }
+    }
+    @Test
+    void getPass(){
+        String SALT = "allen";
+        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + 12345678).getBytes());
+        System.out.println(encryptPassword);
     }
 }
