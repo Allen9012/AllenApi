@@ -3,8 +3,11 @@ package com.allen.project.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.allen.project.model.entity.User;
+import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 用户服务
@@ -56,4 +59,11 @@ public interface UserService extends IService<User> {
      * @return
      */
     boolean userLogout(HttpServletRequest request);
+
+    /**
+     * 获取新的aksk， ak下标1 ，sk下标2
+     * @param userAccount
+     * @return
+     */
+    Map<String, String> getKeys(String userAccount);
 }

@@ -17,6 +17,11 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static com.allen.project.constant.UserConstant.ADMIN_ROLE;
 import static com.allen.project.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -65,7 +70,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             }
             // 2. 加密
             String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
-            // 3. 奉陪分配ak sk
+            // 3. 分配ak sk
             String accessKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(5));
             String secretKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(8));
             // 4. 插入数据
@@ -163,6 +168,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return true;
     }
 
+    public Map<String, String> getKeys(String userAccount) {
+        String accessKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(5));
+        String secretKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(8));
+        HashMap<String, String> Keys = new HashMap<>();
+        Keys.put("accessKey", accessKey);
+        Keys.put("secretKey", secretKey);
+        return Keys;
+    }
 }
 
 

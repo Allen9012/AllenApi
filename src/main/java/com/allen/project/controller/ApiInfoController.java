@@ -1,5 +1,7 @@
 package com.allen.project.controller;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.allen.allenapiclientsdk.client.AllenApiClient;
 import com.allen.project.annotation.AuthCheck;
 import com.allen.project.common.*;
@@ -18,11 +20,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+
+import static com.sun.javafx.font.FontResource.SALT;
 
 /**
  * 帖子接口
@@ -258,29 +264,35 @@ public class ApiInfoController {
         return ResultUtils.success(result);
     }
 
-//    /**
-//     * 用户请求修改aksk
-//     * @param idRequest
-//     * @param request
-//     * @return
-//     */
-//    @PostMapping("/update/key")
-//    public BaseResponse<Boolean> updateKeyInfo(@RequestBody IdRequest idRequest,
-//                                                HttpServletRequest request) {
-//        if(idRequest == null || idRequest.getId() <= 0){
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-//        }
-//        //校验数据库是否存在
-//        long id = idRequest.getId();
-//        ApiInfo oldApiInfo = apiInfoService.getById(id);
-//        if(oldApiInfo == null){
-//            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
-//        }
-//        //只有本人和管理员可以修改
-//        ApiInfo apiInfo = new ApiInfo();
-//        apiInfo.setId(id);
-//        apiInfo.setStatus(ApiInfoStatusEnum.OFFLINE.getValue());
-//        boolean result = apiInfoService.updateById(apiInfo);
-//        return ResultUtils.success(result);
-//    }
+    /**
+     * 用户请求修改aksk
+     * @param idRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/update/key")
+    public BaseResponse<Boolean> updateKey(@RequestBody IdRequest idRequest,
+                                                HttpServletRequest request) {
+        if(idRequest == null || idRequest.getId() <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验数据库是否存在
+        long id = idRequest.getId();
+        User oldUser = userService.getById(id);
+        if(oldUser == null){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        String userAccount = oldUser.getUserAccount();
+        //生成新的ak和sk
+        Map<String, String> keys = userService.getKeys(userAccount);
+        String newAccessKey = keys.get("accessKey");
+        String newSecretKey = keys.get("secretKey");
+        oldUser.setAccessKey(newAccessKey);
+        oldUser.setSecretKey(newSecretKey);
+        boolean result = userService.save(oldUser);
+        if (!result) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR);
+        }
+        return ResultUtils.success(result);
+    }
 }
