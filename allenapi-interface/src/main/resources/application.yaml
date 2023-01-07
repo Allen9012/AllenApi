@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: allenapi-interface
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+# 当前的依赖包被放在了maven仓库中，换台电脑就没了，如果说要传云的话需要上传maven仓库
+allenapi:
+  client:
+    access-key: allen
+    secret-key: 12345678
