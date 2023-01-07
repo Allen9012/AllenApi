@@ -1,13 +1,12 @@
 package com.allen.project.controller;
 
-import cn.hutool.core.util.RandomUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.allen.allenapiclientsdk.client.AllenApiClient;
 import com.allen.project.annotation.AuthCheck;
 import com.allen.project.common.*;
 import com.allen.project.constant.CommonConstant;
 import com.allen.project.exception.BusinessException;
 import com.allen.project.model.dto.apiinfo.ApiInfoAddRequest;
+import com.allen.project.model.dto.apiinfo.ApiInfoInvokeRequest;
 import com.allen.project.model.dto.apiinfo.ApiInfoQueryRequest;
 import com.allen.project.model.dto.apiinfo.ApiInfoUpdateRequest;
 import com.allen.project.model.entity.ApiInfo;
@@ -17,18 +16,16 @@ import com.allen.project.service.ApiInfoService;
 import com.allen.project.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
-
-import static com.sun.javafx.font.FontResource.SALT;
 
 /**
  * 帖子接口
@@ -245,6 +242,7 @@ public class ApiInfoController {
      * @return
      */
     @PostMapping("/offline")
+    @AuthCheck(mustRole = "admin")
     public BaseResponse<Boolean> offlineApiInfo(@RequestBody IdRequest idRequest,
                                                HttpServletRequest request) {
         if(idRequest == null || idRequest.getId() <= 0){
@@ -262,6 +260,48 @@ public class ApiInfoController {
         apiInfo.setStatus(ApiInfoStatusEnum.OFFLINE.getValue());
         boolean result = apiInfoService.updateById(apiInfo);
         return ResultUtils.success(result);
+    }
+    /**
+     * 调用接口
+     *
+     * @param apiInfoInvokeRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/invoke")
+    public BaseResponse<Object> invokeApiInfo(@RequestBody ApiInfoInvokeRequest apiInfoInvokeRequest,
+                                                HttpServletRequest request) {
+        if(apiInfoInvokeRequest == null || apiInfoInvokeRequest.getId()<= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验数据库是否存在
+        long id = apiInfoInvokeRequest.getId();
+        String userRequestParams = apiInfoInvokeRequest.getUserRequestParams();
+        ApiInfo oldApiInfo = apiInfoService.getById(id);
+        if(oldApiInfo == null){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        //判断api是否关闭
+        if(oldApiInfo.getStatus() != ApiInfoStatusEnum.ONLINE.getValue()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已经关闭");
+        }
+        User loginUser = userService.getLoginUser(request);
+        //获取用户的身份签名
+        String accessKey = loginUser.getAccessKey();
+        String secretKey = loginUser.getSecretKey();
+        //todo 暂时写死假设调用的就是这个接口,后期可以修改成固定的地址去调用
+        //生成一个新的client
+        AllenApiClient tmpApiClient = new AllenApiClient(accessKey, secretKey);
+        com.allen.allenapiclientsdk.model.User user = null;
+        //调用获得返回值
+        Gson gson = new Gson();
+        try {//隐藏服务器端报错
+            user = gson.fromJson(userRequestParams, com.allen.allenapiclientsdk.model.User.class);
+        }catch (RuntimeException e){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不符合Json格式");
+        }
+        String usernameByPost = tmpApiClient.getUsernameByPost(user);
+        return ResultUtils.success(usernameByPost);
     }
 
     /**
@@ -284,7 +324,7 @@ public class ApiInfoController {
         }
         String userAccount = oldUser.getUserAccount();
         //生成新的ak和sk
-        Map<String, String> keys = userService.getKeys(userAccount);
+        Map<String, String> keys = userService.getNewKeys(userAccount);
         String newAccessKey = keys.get("accessKey");
         String newSecretKey = keys.get("secretKey");
         oldUser.setAccessKey(newAccessKey);

@@ -168,7 +168,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return true;
     }
 
-    public Map<String, String> getKeys(String userAccount) {
+    public Map<String, String> getNewKeys(String userAccount) {
         String accessKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(5));
         String secretKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(8));
         HashMap<String, String> Keys = new HashMap<>();

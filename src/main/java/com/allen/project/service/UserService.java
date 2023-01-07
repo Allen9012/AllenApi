@@ -3,10 +3,8 @@ package com.allen.project.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.allen.project.model.entity.User;
-import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,5 +63,5 @@ public interface UserService extends IService<User> {
      * @param userAccount
      * @return
      */
-    Map<String, String> getKeys(String userAccount);
+    Map<String, String> getNewKeys(String userAccount);
 }
